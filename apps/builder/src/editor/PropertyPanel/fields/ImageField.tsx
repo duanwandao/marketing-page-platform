@@ -1,0 +1,15 @@
+import type { FieldProps } from "./field-props";
+
+export function ImageField({ field, value, onChange }: FieldProps) {
+  return (
+    <label className="field">
+      <span>{field.label}</span>
+      <input
+        type="url"
+        value={typeof value === "string" ? value : ""}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="https://"
+      />
+    </label>
+  );
+}

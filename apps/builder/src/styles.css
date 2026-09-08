@@ -1,0 +1,314 @@
+:root {
+  color: #1c2630;
+  background: #eef2f6;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.editor-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 64px 1fr;
+}
+
+.editor-toolbar {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #d8e0e7;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.editor-toolbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.segmented-control {
+  background: #e6ebf0;
+  border-radius: 6px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.segmented-control button {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #52616f;
+  min-width: 84px;
+  padding: 8px 12px;
+}
+
+.segmented-control button[aria-pressed="true"] {
+  background: #ffffff;
+  color: #17212b;
+  box-shadow: 0 1px 2px rgb(23 33 43 / 12%);
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(420px, 1fr) 300px;
+  min-height: 0;
+}
+
+.component-library,
+.property-panel {
+  background: #ffffff;
+  border-right: 1px solid #d8e0e7;
+  padding: 20px;
+}
+
+.property-panel {
+  border-left: 1px solid #d8e0e7;
+  border-right: 0;
+}
+
+.component-library h2,
+.property-panel h2 {
+  font-size: 14px;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+}
+
+.component-library__list,
+.property-panel__fields {
+  display: grid;
+  gap: 10px;
+}
+
+.component-library__list button {
+  background: #f7f9fb;
+  border: 1px solid #cfd9e2;
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.canvas {
+  overflow: auto;
+  padding: 28px;
+}
+
+.canvas__page,
+.preview-surface .mpp-page-renderer {
+  background: #ffffff;
+  margin: 0 auto;
+  max-width: 760px;
+  min-height: 720px;
+  width: 100%;
+}
+
+.canvas__empty,
+.property-panel__empty {
+  color: #7a8793;
+}
+
+.canvas__empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 360px;
+}
+
+.editor-component {
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.editor-component:hover {
+  border-color: #8fc3ff;
+}
+
+.editor-component--selected {
+  border-color: #1769e0;
+}
+
+.editor-component__tools {
+  display: none;
+  gap: 6px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+}
+
+.editor-component:hover .editor-component__tools,
+.editor-component--selected .editor-component__tools {
+  display: flex;
+}
+
+.editor-component__tools button {
+  align-items: center;
+  background: #17212b;
+  border: 0;
+  border-radius: 4px;
+  color: #ffffff;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: #52616f;
+  font-size: 13px;
+}
+
+.field input {
+  border: 1px solid #cfd9e2;
+  border-radius: 6px;
+  color: #17212b;
+  min-width: 0;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.field--color {
+  grid-template-columns: 44px 1fr;
+}
+
+.field--color span {
+  grid-column: 1 / -1;
+}
+
+.field--color input[type="color"] {
+  height: 38px;
+  padding: 2px;
+}
+
+.field--switch {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.field--switch input {
+  width: auto;
+}
+
+.preview-surface {
+  overflow: auto;
+  padding: 32px;
+}
+
+.mpp-banner {
+  min-height: 220px;
+  overflow: hidden;
+  padding: 48px;
+  position: relative;
+}
+
+.mpp-banner__image {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0.35;
+  position: absolute;
+  width: 100%;
+}
+
+.mpp-banner h1 {
+  font-size: 44px;
+  margin: 0;
+  position: relative;
+}
+
+.mpp-text {
+  padding: 28px 48px;
+}
+
+.mpp-text p {
+  font-size: 20px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mpp-coupon {
+  padding: 24px 48px;
+}
+
+.mpp-coupon div {
+  align-items: center;
+  background: #f04f3e;
+  border-radius: 8px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.mpp-coupon strong {
+  font-size: 22px;
+}
+
+.mpp-coupon span {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.mpp-products {
+  padding: 32px 48px 48px;
+}
+
+.mpp-products h2 {
+  font-size: 28px;
+  margin: 0 0 16px;
+}
+
+.mpp-products__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mpp-product {
+  background: #f7f9fb;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-height: 104px;
+  padding: 16px;
+}
+
+.mpp-product strong {
+  color: #d74434;
+  font-size: 20px;
+}
+
+.mpp-unknown {
+  border: 1px dashed #d74434;
+  color: #d74434;
+  margin: 16px;
+  padding: 16px;
+}
