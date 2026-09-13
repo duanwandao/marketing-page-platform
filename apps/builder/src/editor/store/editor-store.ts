@@ -1,18 +1,22 @@
 import { create } from "zustand";
 import { componentRegistry } from "@mpp/component-registry";
 import type { PageSchema } from "@mpp/schema";
-import { demoPageSchema } from "../demo-page-schema";
 
 interface EditorState {
-  pageSchema: PageSchema;
+  pageSchema: PageSchema | null;
   selectedComponentId: string | null;
+  revision: number;
+  lastSavedRevision: number;
   addComponent: (type: string) => void;
   removeComponent: (id: string) => void;
   selectComponent: (id: string | null) => void;
+  updatePageTitle: (title: string) => void;
   updateComponentProps: (id: string, patch: Record<string, unknown>) => void;
   moveComponentUp: (id: string) => void;
   moveComponentDown: (id: string) => void;
-  resetPage: (schema: PageSchema) => void;
+  loadPage: (schema: PageSchema) => void;
+  clearPage: () => void;
+  markSaved: (revision: number) => void;
 }
 
 function createComponentId(type: string) {
@@ -35,8 +39,10 @@ function moveComponent(schema: PageSchema, id: string, direction: -1 | 1): PageS
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
-  pageSchema: structuredClone(demoPageSchema),
+  pageSchema: null,
   selectedComponentId: null,
+  revision: 0,
+  lastSavedRevision: 0,
   addComponent: (type) => {
     const definition = componentRegistry.get(type);
     if (!definition) {
@@ -44,40 +50,96 @@ export const useEditorStore = create<EditorState>((set) => ({
     }
 
     const id = createComponentId(type);
-    set((state) => ({
-      pageSchema: {
-        ...state.pageSchema,
-        components: [
-          ...state.pageSchema.components,
-          {
-            id,
-            type,
-            props: structuredClone(definition.defaultProps)
-          }
-        ]
-      },
-      selectedComponentId: id
-    }));
+    set((state) => {
+      if (!state.pageSchema) {
+        return state;
+      }
+
+      return {
+        pageSchema: {
+          ...state.pageSchema,
+          components: [
+            ...state.pageSchema.components,
+            {
+              id,
+              type,
+              props: structuredClone(definition.defaultProps)
+            }
+          ]
+        },
+        selectedComponentId: id,
+        revision: state.revision + 1
+      };
+    });
   },
   removeComponent: (id) =>
-    set((state) => ({
-      pageSchema: {
-        ...state.pageSchema,
-        components: state.pageSchema.components.filter((component) => component.id !== id)
-      },
-      selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId
-    })),
-  selectComponent: (id) => set({ selectedComponentId: id }),
-  updateComponentProps: (id, patch) =>
-    set((state) => ({
-      pageSchema: {
-        ...state.pageSchema,
-        components: state.pageSchema.components.map((component) =>
-          component.id === id ? { ...component, props: { ...component.props, ...patch } } : component
-        )
+    set((state) => {
+      if (!state.pageSchema || !state.pageSchema.components.some((component) => component.id === id)) {
+        return state;
       }
-    })),
-  moveComponentUp: (id) => set((state) => ({ pageSchema: moveComponent(state.pageSchema, id, -1) })),
-  moveComponentDown: (id) => set((state) => ({ pageSchema: moveComponent(state.pageSchema, id, 1) })),
-  resetPage: (schema) => set({ pageSchema: structuredClone(schema), selectedComponentId: null })
+
+      return {
+        pageSchema: {
+          ...state.pageSchema,
+          components: state.pageSchema.components.filter((component) => component.id !== id)
+        },
+        selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId,
+        revision: state.revision + 1
+      };
+    }),
+  selectComponent: (id) => set({ selectedComponentId: id }),
+  updatePageTitle: (title) =>
+    set((state) => {
+      if (!state.pageSchema || state.pageSchema.title === title) {
+        return state;
+      }
+
+      return {
+        pageSchema: { ...state.pageSchema, title },
+        revision: state.revision + 1
+      };
+    }),
+  updateComponentProps: (id, patch) =>
+    set((state) => {
+      if (!state.pageSchema || !state.pageSchema.components.some((component) => component.id === id)) {
+        return state;
+      }
+
+      return {
+        pageSchema: {
+          ...state.pageSchema,
+          components: state.pageSchema.components.map((component) =>
+            component.id === id ? { ...component, props: { ...component.props, ...patch } } : component
+          )
+        },
+        revision: state.revision + 1
+      };
+    }),
+  moveComponentUp: (id) =>
+    set((state) => {
+      if (!state.pageSchema) {
+        return state;
+      }
+      const pageSchema = moveComponent(state.pageSchema, id, -1);
+      return pageSchema === state.pageSchema ? state : { pageSchema, revision: state.revision + 1 };
+    }),
+  moveComponentDown: (id) =>
+    set((state) => {
+      if (!state.pageSchema) {
+        return state;
+      }
+      const pageSchema = moveComponent(state.pageSchema, id, 1);
+      return pageSchema === state.pageSchema ? state : { pageSchema, revision: state.revision + 1 };
+    }),
+  loadPage: (schema) =>
+    set({
+      pageSchema: structuredClone(schema),
+      selectedComponentId: null,
+      revision: 0,
+      lastSavedRevision: 0
+    }),
+  clearPage: () =>
+    set({ pageSchema: null, selectedComponentId: null, revision: 0, lastSavedRevision: 0 }),
+  markSaved: (revision) =>
+    set((state) => ({ lastSavedRevision: Math.max(state.lastSavedRevision, revision) }))
 }));

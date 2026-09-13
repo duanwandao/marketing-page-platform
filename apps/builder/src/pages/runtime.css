@@ -1,0 +1,14 @@
+.runtime-message {
+  background: #ffffff;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  color: #687887;
+  margin: 64px auto;
+  max-width: 640px;
+  padding: 32px;
+  text-align: center;
+}
+
+.runtime-message--error {
+  color: #b83227;
+}

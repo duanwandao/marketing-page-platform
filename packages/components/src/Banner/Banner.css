@@ -1,0 +1,21 @@
+.mpp-banner {
+  min-height: 220px;
+  overflow: hidden;
+  padding: 48px;
+  position: relative;
+}
+
+.mpp-banner__image {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0.35;
+  position: absolute;
+  width: 100%;
+}
+
+.mpp-banner h1 {
+  font-size: 44px;
+  margin: 0;
+  position: relative;
+}

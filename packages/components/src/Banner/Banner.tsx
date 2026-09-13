@@ -1,4 +1,5 @@
 import type { BannerProps } from "./types";
+import "./Banner.css";
 
 export function Banner({ title, image, backgroundColor }: BannerProps) {
   return (

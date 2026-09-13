@@ -1,4 +1,5 @@
 import type { CouponProps } from "./types";
+import "./Coupon.css";
 
 export function Coupon({ title, amount, threshold }: CouponProps) {
   return (

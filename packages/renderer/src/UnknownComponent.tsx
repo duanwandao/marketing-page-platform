@@ -1,3 +1,5 @@
+import "./renderer.css";
+
 export interface UnknownComponentProps {
   type: string;
 }

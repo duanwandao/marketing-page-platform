@@ -15,7 +15,7 @@ describe("PropertyPanel", () => {
       defaultProps: { title: "Original", image: "", backgroundColor: "#ffffff" },
       configSchema: [{ key: "title", label: "Title", type: "text" }]
     });
-    useEditorStore.getState().resetPage({
+    useEditorStore.getState().loadPage({
       schemaVersion: 1,
       id: "demo",
       title: "Demo",
@@ -37,6 +37,6 @@ describe("PropertyPanel", () => {
     expect(input).toHaveValue("Original");
 
     fireEvent.change(input, { target: { value: "Updated" } });
-    expect(useEditorStore.getState().pageSchema.components[0].props.title).toBe("Updated");
+    expect(useEditorStore.getState().pageSchema!.components[0].props.title).toBe("Updated");
   });
 });

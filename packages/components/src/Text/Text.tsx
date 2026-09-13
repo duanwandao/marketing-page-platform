@@ -1,4 +1,5 @@
 import type { TextProps } from "./types";
+import "./Text.css";
 
 export function Text({ content, color }: TextProps) {
   return (

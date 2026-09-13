@@ -4,7 +4,7 @@ import { useEditorStore } from "../store/editor-store";
 
 export function PropertyPanel() {
   const selectedComponentId = useEditorStore((state) => state.selectedComponentId);
-  const components = useEditorStore((state) => state.pageSchema.components);
+  const components = useEditorStore((state) => state.pageSchema?.components ?? []);
   const updateComponentProps = useEditorStore((state) => state.updateComponentProps);
   const selectedComponent = components.find((component) => component.id === selectedComponentId);
 

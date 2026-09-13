@@ -1,0 +1,22 @@
+.mpp-coupon {
+  padding: 24px 48px;
+}
+
+.mpp-coupon div {
+  align-items: center;
+  background: #f04f3e;
+  border-radius: 8px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.mpp-coupon strong {
+  font-size: 22px;
+}
+
+.mpp-coupon span {
+  font-size: 28px;
+  font-weight: 700;
+}

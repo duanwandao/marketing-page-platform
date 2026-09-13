@@ -1,4 +1,5 @@
 import type { ProductListProps } from "./types";
+import "./ProductList.css";
 
 export function ProductList({ title, products }: ProductListProps) {
   return (

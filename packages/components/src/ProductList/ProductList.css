@@ -1,0 +1,29 @@
+.mpp-products {
+  padding: 32px 48px 48px;
+}
+
+.mpp-products h2 {
+  font-size: 28px;
+  margin: 0 0 16px;
+}
+
+.mpp-products__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mpp-product {
+  background: #f7f9fb;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-height: 104px;
+  padding: 16px;
+}
+
+.mpp-product strong {
+  color: #d74434;
+  font-size: 20px;
+}

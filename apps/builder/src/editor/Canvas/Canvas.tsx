@@ -3,7 +3,7 @@ import { EditorComponentWrapper } from "./EditorComponentWrapper";
 import { useEditorStore } from "../store/editor-store";
 
 export function Canvas() {
-  const components = useEditorStore((state) => state.pageSchema.components);
+  const components = useEditorStore((state) => state.pageSchema?.components ?? []);
 
   return (
     <main className="canvas" aria-label="Canvas">

@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "pnpm --filter builder dev",
+    "build": "pnpm -r --if-present build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
