@@ -108,4 +108,20 @@ describe("editor store", () => {
     expect(state.lastSavedRevision).toBe(1);
     expect(state.revision === state.lastSavedRevision).toBe(false);
   });
+
+  it("replaces an AI proposal as a dirty draft without saving it", () => {
+    useEditorStore.getState().selectComponent("selected");
+    useEditorStore.getState().replacePageSchema({
+      schemaVersion: 1,
+      id: "test-page",
+      title: "AI proposal",
+      components: []
+    });
+
+    const state = useEditorStore.getState();
+    expect(state.pageSchema?.title).toBe("AI proposal");
+    expect(state.selectedComponentId).toBeNull();
+    expect(state.revision).toBe(1);
+    expect(state.lastSavedRevision).toBe(0);
+  });
 });

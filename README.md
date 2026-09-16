@@ -48,6 +48,7 @@ PageRenderer
 - localStorage Repository
 - Low Coupling
 - High Cohesion
+- AI Page Copilot proposals with human Apply / Discard
 
 ## Routes
 
@@ -63,6 +64,17 @@ Saving only updates the editable `schema`. Publishing saves that draft and copie
 pnpm install
 pnpm dev
 ```
+
+`pnpm dev` starts Builder and the local agent server. Configure the server in `.env` (never in Builder code):
+
+```bash
+AI_API_KEY=
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=
+PORT=8787
+```
+
+For example, ask: `Create a Mid-Autumn promotion page with a festive banner, a coupon, and a recommended product section.` The Copilot uses real tool calling to inspect the small component catalog and return a validated schema proposal. It does not save or publish until you explicitly Apply, then use the existing Save and Publish controls. RAG is intentionally not used yet because the catalog is small.
 
 ## Test
 

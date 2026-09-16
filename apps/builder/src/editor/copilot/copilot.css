@@ -1,0 +1,2 @@
+.copilot-panel { border-top: 1px solid #d8e0e7; padding: 16px; }
+.copilot-panel h2 { font-size: 16px; margin: 0 0 12px; }.copilot-panel label { display:block; font-size:13px; margin-bottom:6px; }.copilot-panel textarea { min-height:84px; resize:vertical; width:100%; }.copilot-panel__result { min-height:24px; margin:10px 0; }.copilot-panel__actions { display:flex; gap:8px; }.copilot-panel details { margin-top:12px; }.copilot-panel ul { padding-left:18px; }

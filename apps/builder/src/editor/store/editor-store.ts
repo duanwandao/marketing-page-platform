@@ -15,6 +15,7 @@ interface EditorState {
   moveComponentUp: (id: string) => void;
   moveComponentDown: (id: string) => void;
   loadPage: (schema: PageSchema) => void;
+  replacePageSchema: (schema: PageSchema) => void;
   clearPage: () => void;
   markSaved: (revision: number) => void;
 }
@@ -138,6 +139,12 @@ export const useEditorStore = create<EditorState>((set) => ({
       revision: 0,
       lastSavedRevision: 0
     }),
+  replacePageSchema: (schema) =>
+    set((state) => ({
+      pageSchema: structuredClone(schema),
+      selectedComponentId: null,
+      revision: state.revision + 1
+    })),
   clearPage: () =>
     set({ pageSchema: null, selectedComponentId: null, revision: 0, lastSavedRevision: 0 }),
   markSaved: (revision) =>

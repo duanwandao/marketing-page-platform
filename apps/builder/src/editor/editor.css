@@ -83,6 +83,17 @@
   padding: 20px;
 }
 
+.editor-sidebar {
+  background: #ffffff;
+  border-left: 1px solid #d8e0e7;
+  min-width: 0;
+  overflow: auto;
+}
+
+.editor-sidebar .property-panel {
+  border: 0;
+}
+
 .property-panel {
   border-left: 1px solid #d8e0e7;
   border-right: 0;

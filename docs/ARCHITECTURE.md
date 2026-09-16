@@ -63,3 +63,13 @@ Renderer, Canvas, PropertyPanel, EditorStore, and ComponentLibrary do not branch
 Business components do not import editor state or builder UI. Renderer does not import Zustand or builder modules.
 
 Published pages import the shared renderer but no EditorStore, Canvas, PropertyPanel, or editing wrapper. Preview renders the current draft from EditorStore; published runtime renders the stored published snapshot.
+
+## AI Page Copilot v1
+
+```text
+Builder → /api/agent → LLM ↔ Tool Loop → Validated proposal → Human Apply → EditorStore → PageSchema
+```
+
+`apps/agent-server` is stateless and owns the provider API key, OpenAI-compatible adapter, bounded tool loop, deterministic proposal validation, and sanitized execution trace. The Builder sends only serializable registry metadata (`type`, `name`, `defaultProps`, `configSchema`), never React implementations. The four model tools are `list_components`, `get_component_definition`, `get_current_page`, and `submit_page_layout`.
+
+Apply calls `EditorStore.replacePageSchema`, making the editable draft dirty without repository I/O. Save and Publish remain user actions; published runtime continues to receive only `publishedSchema` through `PageRenderer`.
