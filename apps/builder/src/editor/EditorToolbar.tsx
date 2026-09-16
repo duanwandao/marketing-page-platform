@@ -7,6 +7,7 @@ interface EditorToolbarProps {
   status: PageStatus;
   saveLabel: string;
   busy: boolean;
+  hasUnsavedChanges: boolean;
   onModeChange: (mode: "edit" | "preview") => void;
   onTitleChange: (title: string) => void;
   onSave: () => void;
@@ -20,6 +21,7 @@ export function EditorToolbar({
   status,
   saveLabel,
   busy,
+  hasUnsavedChanges,
   onModeChange,
   onTitleChange,
   onSave,
@@ -41,7 +43,7 @@ export function EditorToolbar({
             Preview
           </button>
         </div>
-        <button disabled={busy} onClick={onSave} type="button">Save</button>
+        <button disabled={busy || !hasUnsavedChanges} onClick={onSave} type="button">Save</button>
         <button disabled={busy} onClick={onPublish} type="button">Publish</button>
         {status === "published" ? <Link to={`/pages/${pageId}`}>View published page</Link> : null}
       </div>

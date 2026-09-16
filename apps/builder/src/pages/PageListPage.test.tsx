@@ -1,11 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocalStoragePageRepository } from "./repository/local-storage-page-repository";
 import { PageListPage } from "./PageListPage";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("PageListPage", () => {
   it("shows the empty state, creates a page, and opens its editor", async () => {
@@ -28,10 +31,31 @@ describe("PageListPage", () => {
     expect((await repository.get("page-1"))?.title).toBe("Campaign");
   });
 
-  it("lists and deletes an existing page", async () => {
+  it("does not delete when browser confirmation is cancelled", async () => {
     localStorage.clear();
     const repository = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });
     await repository.create({ title: "Campaign" });
+    const deletePage = vi.spyOn(repository, "delete");
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <MemoryRouter>
+        <PageListPage repository={repository} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Campaign")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Campaign" }));
+
+    expect(deletePage).not.toHaveBeenCalled();
+    expect(screen.getByText("Campaign")).toBeInTheDocument();
+  });
+
+  it("deletes an existing page after browser confirmation", async () => {
+    localStorage.clear();
+    const repository = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });
+    await repository.create({ title: "Campaign" });
+    const deletePage = vi.spyOn(repository, "delete");
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(
       <MemoryRouter>
         <PageListPage repository={repository} />
@@ -43,6 +67,7 @@ describe("PageListPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete Campaign" }));
 
     await waitFor(() => expect(screen.getByText("No pages yet.")).toBeInTheDocument());
+    expect(deletePage).toHaveBeenCalledWith("page-1");
     expect(await repository.list()).toEqual([]);
   });
 });

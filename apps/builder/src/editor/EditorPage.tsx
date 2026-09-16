@@ -134,6 +134,7 @@ export function EditorPage({ repository }: EditorPageProps) {
     <div className="editor-shell">
       <EditorToolbar
         busy={command !== "idle"}
+        hasUnsavedChanges={dirty}
         mode={mode}
         onModeChange={setMode}
         onPublish={() => void publish()}

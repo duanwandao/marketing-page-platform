@@ -71,7 +71,11 @@ function isPageRecord(value: unknown): value is PageRecord {
     return false;
   }
 
-  return value.status !== "published" || value.publishedSchema !== null;
+  if (value.status === "published") {
+    return value.publishedSchema !== null && value.publishedAt !== null;
+  }
+
+  return value.publishedAt === null;
 }
 
 function schemasEqual(left: PageSchema, right: PageSchema): boolean {

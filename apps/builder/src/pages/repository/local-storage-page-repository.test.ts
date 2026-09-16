@@ -206,4 +206,48 @@ describe("LocalStoragePageRepository", () => {
 
     await expect(repository.list()).rejects.toBeInstanceOf(PageRepositoryDataError);
   });
+
+  it("rejects a published record without a published timestamp", async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "mpp.pages.v1",
+      JSON.stringify([
+        {
+          id: "page-1",
+          title: "A",
+          schema: schemaWithTitle("A"),
+          publishedSchema: schemaWithTitle("A"),
+          status: "published",
+          createdAt: firstTime,
+          updatedAt: firstTime,
+          publishedAt: null
+        }
+      ])
+    );
+    const repository = new LocalStoragePageRepository(storage);
+
+    await expect(repository.list()).rejects.toBeInstanceOf(PageRepositoryDataError);
+  });
+
+  it("rejects a draft record that has a published timestamp", async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "mpp.pages.v1",
+      JSON.stringify([
+        {
+          id: "page-1",
+          title: "A",
+          schema: schemaWithTitle("A"),
+          publishedSchema: null,
+          status: "draft",
+          createdAt: firstTime,
+          updatedAt: firstTime,
+          publishedAt: firstTime
+        }
+      ])
+    );
+    const repository = new LocalStoragePageRepository(storage);
+
+    await expect(repository.list()).rejects.toBeInstanceOf(PageRepositoryDataError);
+  });
 });

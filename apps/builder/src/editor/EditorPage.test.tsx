@@ -1,13 +1,25 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Outlet, Route, Routes, useNavigate } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { componentRegistry } from "@mpp/component-registry";
 import type { UpdatePageInput } from "../pages/page-record";
 import type { PageRepository } from "../pages/repository/page-repository";
 import { LocalStoragePageRepository } from "../pages/repository/local-storage-page-repository";
 import { EditorPage } from "./EditorPage";
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  componentRegistry.clear();
+  componentRegistry.register({
+    type: "Demo",
+    name: "Demo",
+    component: () => null,
+    defaultProps: {},
+    configSchema: []
+  });
+});
 
 function renderEditor(repository: PageRepository) {
   render(
@@ -38,13 +50,30 @@ describe("EditorPage", () => {
     renderEditor(repository);
     const title = await screen.findByLabelText("Page title");
     expect(title).toHaveValue("Original");
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 
     fireEvent.change(title, { target: { value: "Renamed" } });
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(screen.getByText("Saved")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect((await repository.get("page-1"))?.title).toBe("Renamed");
+  });
+
+  it("enables Save when adding a component changes the draft", async () => {
+    localStorage.clear();
+    const repository = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });
+    await repository.create({ title: "Original" });
+
+    renderEditor(repository);
+    await screen.findByLabelText("Page title");
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Demo" }));
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
   it("publishes the current draft without requiring a prior save", async () => {

@@ -52,6 +52,7 @@ export function PageListPage({ repository }: PageListPageProps) {
 
   async function deletePage(page: PageRecord) {
     if (busy) return;
+    if (!window.confirm(`Delete "${page.title}"?`)) return;
     setBusy(true);
     setError(null);
     try {
