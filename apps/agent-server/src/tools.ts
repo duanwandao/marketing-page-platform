@@ -27,8 +27,15 @@ function isValidFieldValue(type: AgentComponentDefinition["configSchema"][number
   return typeof value === "string";
 }
 
+function sanitize(value: unknown, key = ""): unknown {
+  if (/api.?key|authorization|secret|token|credential|password/i.test(key)) return "[REDACTED]";
+  if (Array.isArray(value)) return value.map((item) => sanitize(item));
+  if (isRecord(value)) return Object.fromEntries(Object.entries(value).map(([childKey, child]) => [childKey, sanitize(child, childKey)]));
+  return value;
+}
+
 function trace(name: string, arguments_: unknown, outcome: "success" | "error", summary: string): AgentTraceEvent {
-  return { toolName: name, arguments: isRecord(arguments_) ? structuredClone(arguments_) : {}, outcome, summary };
+  return { toolName: name, arguments: isRecord(arguments_) ? sanitize(arguments_) as Record<string, unknown> : {}, outcome, summary };
 }
 
 function error(name: AgentToolName, arguments_: unknown, errors: string[]): ToolExecutionResult {

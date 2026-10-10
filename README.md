@@ -74,6 +74,8 @@ AI_MODEL=
 PORT=8787
 ```
 
+Copy `.env.example` to `.env` in the repository root and fill in `AI_API_KEY` and `AI_MODEL`. The agent server loads that file automatically when `pnpm dev` starts; keep `.env` local and do not commit it.
+
 For example, ask: `Create a Mid-Autumn promotion page with a festive banner, a coupon, and a recommended product section.` The Copilot uses real tool calling to inspect the small component catalog and return a validated schema proposal. It does not save or publish until you explicitly Apply, then use the existing Save and Publish controls. RAG is intentionally not used yet because the catalog is small.
 
 ## Test

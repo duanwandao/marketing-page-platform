@@ -6,9 +6,8 @@ import type { PageRepository } from "../pages/repository/page-repository";
 import { Canvas } from "./Canvas/Canvas";
 import { ComponentLibrary } from "./ComponentLibrary";
 import { EditorToolbar } from "./EditorToolbar";
-import { PropertyPanel } from "./PropertyPanel/PropertyPanel";
+import { EditorSidebar } from "./EditorSidebar";
 import { useEditorStore } from "./store/editor-store";
-import { CopilotPanel } from "./copilot/CopilotPanel";
 import "./editor.css";
 
 interface EditorPageProps {
@@ -150,7 +149,7 @@ export function EditorPage({ repository }: EditorPageProps) {
         <div className="editor-layout">
           <ComponentLibrary />
           <Canvas />
-          <aside className="editor-sidebar"><PropertyPanel /><CopilotPanel /></aside>
+          <EditorSidebar />
         </div>
       ) : (
         <div className="preview-surface">

@@ -59,4 +59,9 @@ describe("agent tools", () => {
       observation: { errors: [expect.stringContaining("Unknown component")] }
     });
   });
+
+  it("redacts credential-like values from trace arguments", () => {
+    const result = createAgentTools(request).execute("list_components", { apiKey: "secret-value", nested: { authorization: "Bearer secret" } });
+    expect(result.trace.arguments).toEqual({ apiKey: "[REDACTED]", nested: { authorization: "[REDACTED]" } });
+  });
 });
