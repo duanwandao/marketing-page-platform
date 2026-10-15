@@ -42,3 +42,83 @@ describe("agent loop", () => {
     expect(second?.messages).toContainEqual({ role: "tool", tool_call_id: "page-1", content: JSON.stringify(request.currentPage) });
   });
 });
+
+describe("incremental editing agent", () => {
+  const currentPage = { ...request.currentPage, components: [{ id: "coupon-existing", type: "Coupon", props: { title: "Special", amount: 20 } }] };
+  const call = (id: string, name: string, args: unknown) => ({ id, name, arguments: JSON.stringify(args) });
+
+  it("sends editing and ambiguity guidance to the model", async () => {
+    const model = new ScriptedModel([{ content: "Which coupon?" }]);
+    await runAgent({ request, model });
+    const system = model.inputs[0].messages[0] as { content: string };
+    for (const rule of ["get_current_page", "apply_page_changes", "submit_page_layout", "exact component IDs", "clarification", "source of truth"]) {
+      expect(system.content).toContain(rule);
+    }
+  });
+
+  it("repairs an invalid patch from indexed tool feedback", async () => {
+    const model = new ScriptedModel([
+      { toolCalls: [call("read", "get_current_page", {})] },
+      { toolCalls: [call("bad", "apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-existing", props: { amount: "50" } }] })] },
+      { toolCalls: [call("good", "apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-existing", props: { amount: 50 } }] })] },
+      { content: "Discount updated." }
+    ]);
+    const result = await runAgent({ request: { ...request, currentPage }, model });
+    expect(result.proposedSchema).toEqual({ ...currentPage, components: [{ id: "coupon-existing", type: "Coupon", props: { title: "Special", amount: 50 } }] });
+    expect(model.inputs[2].messages).toContainEqual({ role: "tool", tool_call_id: "bad", content: JSON.stringify({ success: false, errors: ["changes[0]: Coupon.amount must be a number"] }) });
+    expect(result.trace.map((event) => event.outcome)).toEqual(["success", "error", "success"]);
+  });
+
+  it("edits a server-generated ID in a later tool call using working-page feedback", async () => {
+    let turn = 0;
+    const model: AgentModelAdapter = {
+      async complete({ messages }) {
+        turn += 1;
+        if (turn === 1) return { toolCalls: [call("add", "apply_page_changes", { changes: [{ operation: "add_component", component: { type: "Coupon" } }] })] };
+        if (turn === 2) return { toolCalls: [call("read", "get_current_page", {})] };
+        if (turn === 3) {
+          const added = JSON.parse(messages.find((message) => message.tool_call_id === "add")!.content!).page;
+          const read = JSON.parse(messages.find((message) => message.tool_call_id === "read")!.content!);
+          expect(read).toEqual(added);
+          return { toolCalls: [call("update", "apply_page_changes", { changes: [{ operation: "update_component", componentId: read.components[0].id, props: { amount: 50 } }] })] };
+        }
+        return { content: "Proposal ready." };
+      }
+    };
+    const result = await runAgent({ request, model });
+    expect(result.proposedSchema?.components).toHaveLength(1);
+    expect(result.proposedSchema?.components[0]).toMatchObject({ id: expect.stringMatching(/^coupon-/), props: { title: "Coupon", amount: 50 } });
+    expect(request.currentPage.components).toEqual([]);
+  });
+
+  it("returns a clarification without a proposal for ambiguous targets", async () => {
+    const model = new ScriptedModel([
+      { toolCalls: [call("read", "get_current_page", {})] },
+      { content: "Which coupon should I update: Special or Second?" }
+    ]);
+    const result = await runAgent({ request: { ...request, currentPage: { ...currentPage, components: [currentPage.components[0], { id: "coupon-second", type: "Coupon", props: { title: "Second", amount: 30 } }] } }, model });
+    expect(result.message).toBe("Which coupon should I update: Special or Second?");
+    expect(result.proposedSchema).toBeNull();
+    expect(result.trace.map((event) => event.toolName)).toEqual(["get_current_page"]);
+  });
+
+  it("returns no proposal on eight-iteration exhaustion even after a successful edit", async () => {
+    const model = new ScriptedModel(Array.from({ length: 9 }, (_, index) => ({ toolCalls: [call(String(index), "apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-existing", props: { amount: 50 } }] })] })));
+    const result = await runAgent({ request: { ...request, currentPage }, model });
+    expect(model.inputs).toHaveLength(8);
+    expect(result.proposedSchema).toBeNull();
+    expect(result.trace).toHaveLength(8);
+  });
+
+  it("feeds unknown-tool and malformed-JSON errors back to the model", async () => {
+    const model = new ScriptedModel([
+      { toolCalls: [call("unknown", "missing_tool", {})] },
+      { toolCalls: [{ id: "bad-json", name: "apply_page_changes", arguments: "{" }] },
+      { content: "Please clarify your request." }
+    ]);
+    const result = await runAgent({ request, model });
+    expect(result.trace.map((event) => event.outcome)).toEqual(["error", "error"]);
+    expect(model.inputs[2].messages).toContainEqual({ role: "tool", tool_call_id: "bad-json", content: JSON.stringify({ success: false, errors: ["Tool arguments must be valid JSON"] }) });
+    expect(result.proposedSchema).toBeNull();
+  });
+});

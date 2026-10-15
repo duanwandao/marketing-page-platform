@@ -21,7 +21,8 @@ describe("agent contracts", () => {
       "list_components",
       "get_component_definition",
       "get_current_page",
-      "submit_page_layout"
+      "submit_page_layout",
+      "apply_page_changes"
     ]);
   });
 });

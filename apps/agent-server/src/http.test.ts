@@ -31,7 +31,7 @@ describe("agent HTTP handler", () => {
     const handler = createAgentHttpHandler(fakeModel);
     const good = await invoke(handler, "POST", "/api/agent", JSON.stringify(requestBody));
     expect(good.status()).toBe(200);
-    expect(good.body()).toMatchObject({ message: "The assistant finished without a valid page proposal.", proposedSchema: null });
+    expect(good.body()).toMatchObject({ message: "No proposal.", proposedSchema: null });
     expect((await invoke(handler, "GET", "/api/agent")).status()).toBe(405);
     expect((await invoke(handler, "POST", "/elsewhere")).status()).toBe(404);
     const bad = await invoke(handler, "POST", "/api/agent", "not-json");

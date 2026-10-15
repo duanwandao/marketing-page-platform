@@ -74,13 +74,13 @@ export function CopilotPanel({ requestAgent = defaultRequestAgent }: { requestAg
   return (
     <section className="copilot-panel" aria-label="AI Copilot">
       <h2>AI Copilot</h2>
-      <label htmlFor="copilot-instruction">Describe the page you want</label>
+      <label htmlFor="copilot-instruction">Describe the page or change you want</label>
       <textarea id="copilot-instruction" value={instruction} onChange={(event) => setInstruction(event.target.value)} />
-      <p className="copilot-panel__hint">This creates a full-page proposal. Apply replaces the current draft; it does not save or publish.</p>
+      <p className="copilot-panel__hint">Generate a page or edit the current draft. Apply updates the draft; save and publish are separate actions.</p>
       <button className="copilot-panel__generate" type="button" disabled={running || !instruction.trim()} onClick={() => void generate()}>
         {running ? "Generating…" : "Generate"}
       </button>
-      {running ? <p className="copilot-panel__loading" role="status">Generating a page proposal…</p> : null}
+      {running ? <p className="copilot-panel__loading" role="status">Generating a proposal…</p> : null}
       {error ? <p className="copilot-panel__error" role="alert">{error}</p> : null}
       {response ? <>
         <p className="copilot-panel__result" aria-live="polite">{response.message}</p>

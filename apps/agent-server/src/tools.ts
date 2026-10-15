@@ -1,10 +1,12 @@
 import type {
-  AgentComponentDefinition,
   AgentRequest,
   AgentToolName,
   AgentTraceEvent,
   PageSchema
 } from "@mpp/schema";
+
+import { applyPageChanges } from "./mutations";
+import { isRecord, validateProps, validatePageSchema } from "./validator";
 
 export interface ToolExecutionResult {
   success: boolean;
@@ -15,16 +17,6 @@ export interface ToolExecutionResult {
 
 export interface AgentTools {
   execute(name: AgentToolName, arguments_: unknown): ToolExecutionResult;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isValidFieldValue(type: AgentComponentDefinition["configSchema"][number]["type"], value: unknown) {
-  if (type === "number") return typeof value === "number" && Number.isFinite(value);
-  if (type === "switch") return typeof value === "boolean";
-  return typeof value === "string";
 }
 
 function sanitize(value: unknown, key = ""): unknown {
@@ -65,22 +57,10 @@ function normalizeLayout(request: AgentRequest, rawArguments: unknown): ToolExec
       errors.push(`Unknown component type: ${candidate.type}`);
       return null;
     }
-    if (candidate.props !== undefined && !isRecord(candidate.props)) {
-      errors.push(`${candidate.type}.props must be an object`);
-      return null;
-    }
-    const props = structuredClone(definition.defaultProps);
-    const overrides = candidate.props ?? {};
-    for (const [key, value] of Object.entries(overrides)) {
-      const field = definition.configSchema.find((item) => item.key === key);
-      if (!field) {
-        errors.push(`${candidate.type}.${key} is not configurable`);
-      } else if (!isValidFieldValue(field.type, value)) {
-        errors.push(`${candidate.type}.${key} must be ${field.type === "number" ? "a number" : field.type === "switch" ? "a boolean" : "a string"}`);
-      } else {
-        props[key] = value;
-      }
-    }
+    const overrides = candidate.props === undefined ? {} : candidate.props;
+    const propErrors = validateProps(candidate.type, overrides, request.componentCatalog);
+    errors.push(...propErrors.map((message) => `components[${index}]: ${message}`));
+    const props = { ...structuredClone(definition.defaultProps), ...(isRecord(overrides) ? overrides : {}) };
     return { id: `${candidate.type.toLowerCase()}-${index + 1}`, type: candidate.type, props };
   });
 
@@ -94,15 +74,22 @@ function normalizeLayout(request: AgentRequest, rawArguments: unknown): ToolExec
     title: rawArguments.title ?? request.currentPage.title,
     components: components as PageSchema["components"]
   };
+  const pageErrors = validatePageSchema(proposedSchema, request.componentCatalog);
+  if (pageErrors.length) return error("submit_page_layout", rawArguments, pageErrors);
   return {
     success: true,
-    observation: { success: true, componentCount: proposedSchema.components.length },
+    observation: { success: true, componentCount: proposedSchema.components.length, page: structuredClone(proposedSchema) },
     proposedSchema,
     trace: trace("submit_page_layout", rawArguments, "success", `Proposal accepted with ${proposedSchema.components.length} components`)
   };
 }
 
 export function createAgentTools(request: AgentRequest): AgentTools {
+  let workingPage = structuredClone(request.currentPage);
+  function accept(result: ToolExecutionResult): ToolExecutionResult {
+    if (result.success && result.proposedSchema) workingPage = structuredClone(result.proposedSchema);
+    return result;
+  }
   return {
     execute(name, arguments_) {
       switch (name) {
@@ -121,9 +108,22 @@ export function createAgentTools(request: AgentRequest): AgentTools {
           return { success: true, observation: structuredClone(definition), trace: trace(name, arguments_, "success", `Loaded ${definition.type} definition`) };
         }
         case "get_current_page":
-          return { success: true, observation: structuredClone(request.currentPage), trace: trace(name, arguments_, "success", `Loaded ${request.currentPage.title}`) };
+          return { success: true, observation: structuredClone(workingPage), trace: trace(name, arguments_, "success", `Loaded ${workingPage.title}`) };
         case "submit_page_layout":
-          return normalizeLayout(request, arguments_);
+          return accept(normalizeLayout({ ...request, currentPage: workingPage }, arguments_));
+        case "apply_page_changes": {
+          if (!isRecord(arguments_) || Object.keys(arguments_).some((key) => key !== "changes")) {
+            return error(name, arguments_, ["Tool input must be an object containing only changes"]);
+          }
+          const result = applyPageChanges(workingPage, arguments_.changes, request.componentCatalog);
+          if (!result.success) return error(name, arguments_, result.errors);
+          return accept({
+            success: true,
+            observation: { success: true, page: structuredClone(result.page) },
+            proposedSchema: result.page,
+            trace: trace(name, arguments_, "success", `Proposal accepted with ${result.page.components.length} components`)
+          });
+        }
       }
     }
   };

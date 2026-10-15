@@ -22,7 +22,7 @@ describe("EditorSidebar", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "AI Copilot" }));
     expect(screen.getByRole("tabpanel", { name: "AI Copilot" })).toBeVisible();
-    expect(screen.getByLabelText("Describe the page you want")).toBeVisible();
+    expect(screen.getByLabelText("Describe the page or change you want")).toBeVisible();
   });
 
   it("returns to PropertyPanel when a canvas component is selected", () => {

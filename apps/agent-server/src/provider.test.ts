@@ -45,12 +45,21 @@ describe("OpenAI-compatible tool protocol", () => {
       }
     });
 
+    expect(params("apply_page_changes")).toMatchObject({
+      required: ["changes"], additionalProperties: false,
+      properties: { changes: { type: "array", minItems: 1, items: { oneOf: [
+        { additionalProperties: false, required: ["operation", "componentId", "props"], properties: { operation: { const: "update_component" }, props: { type: "object", minProperties: 1 } } },
+        { additionalProperties: false, required: ["operation", "component"], properties: { operation: { const: "add_component" }, component: { additionalProperties: false, required: ["type"] } } },
+        { additionalProperties: false, required: ["operation", "componentId"], properties: { operation: { const: "remove_component" } } }
+      ] } } }
+    });
+
     const secondMessages = requests[1].messages as Array<Record<string, unknown>>;
     expect(secondMessages).toContainEqual({ role: "assistant", content: null, tool_calls: [{ id: "call-list", type: "function", function: { name: "list_components", arguments: "{}" } }] });
     expect(secondMessages).toContainEqual({ role: "tool", tool_call_id: "call-list", content: JSON.stringify([{ type: "Coupon", name: "Coupon" }]) });
     const thirdMessages = requests[2].messages as Array<Record<string, unknown>>;
     expect(thirdMessages).toContainEqual({ role: "assistant", content: null, tool_calls: [{ id: "call-layout", type: "function", function: { name: "submit_page_layout", arguments: '{"title":"Coupons","components":[{"type":"Coupon","props":{"title":"Save today"}}]}' } }] });
-    expect(thirdMessages).toContainEqual({ role: "tool", tool_call_id: "call-layout", content: JSON.stringify({ success: true, componentCount: 1 }) });
+    expect(thirdMessages).toContainEqual({ role: "tool", tool_call_id: "call-layout", content: JSON.stringify({ success: true, componentCount: 1, page: result.proposedSchema }) });
     expect(result.proposedSchema?.components[0].props.title).toBe("Save today");
   });
 

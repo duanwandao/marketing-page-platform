@@ -65,3 +65,59 @@ describe("agent tools", () => {
     expect(result.trace.arguments).toEqual({ apiKey: "[REDACTED]", nested: { authorization: "[REDACTED]" } });
   });
 });
+
+describe("editing tools working draft", () => {
+  it("accumulates successful batches and rolls back a later failing batch", () => {
+    const input = structuredClone(request);
+    input.currentPage.components = [{ id: "coupon-existing", type: "Coupon", props: { title: "Special", amount: 20 } }];
+    const tools = createAgentTools(input);
+    const result = tools.execute("apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-existing", props: { amount: 50 } }] });
+    expect(result).toMatchObject({ success: true, proposedSchema: { components: [{ id: "coupon-existing", props: { amount: 50, title: "Special" } }] } });
+    expect(result.observation).toEqual({ success: true, page: result.proposedSchema });
+    const accepted = structuredClone(result.proposedSchema);
+    const failed = tools.execute("apply_page_changes", { changes: [
+      { operation: "update_component", componentId: "coupon-existing", props: { amount: 80 } },
+      { operation: "remove_component", componentId: "missing" }
+    ] });
+    expect(failed).toMatchObject({ success: false, observation: { errors: [expect.stringContaining("changes[1]")] } });
+    expect(tools.execute("get_current_page", {}).observation).toEqual(accepted);
+    expect(input.currentPage.components[0].props.amount).toBe(20);
+  });
+  it("isolates all page observations and proposals from the working draft", () => {
+    const tools = createAgentTools(request);
+    const result = tools.execute("apply_page_changes", { changes: [{ operation: "add_component", component: { type: "Coupon" } }] });
+    expect(result.success).toBe(true);
+    const accepted = structuredClone(result.proposedSchema);
+    result.proposedSchema!.components[0].props.amount = 999;
+    (result.observation as { page: NonNullable<typeof result.proposedSchema> }).page.components.length = 0;
+    const read = tools.execute("get_current_page", {}).observation as NonNullable<typeof result.proposedSchema>;
+    expect(read).toEqual(accepted);
+    read.components.length = 0;
+    expect(tools.execute("get_current_page", {}).observation).toEqual(accepted);
+    expect(request.currentPage.components).toEqual([]);
+  });
+  it("uses accepted replacements as the base for later edits and replacement titles", () => {
+    const tools = createAgentTools(request);
+    const replacement = tools.execute("submit_page_layout", { title: "New title", components: [{ type: "Coupon" }] });
+    expect(replacement.success).toBe(true);
+    expect(replacement.observation).toMatchObject({ success: true, page: replacement.proposedSchema });
+    expect(tools.execute("get_current_page", {}).observation).toEqual(replacement.proposedSchema);
+    expect(tools.execute("apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-1", props: { amount: 50 } }] })).toMatchObject({ success: true });
+    expect(tools.execute("submit_page_layout", { title: "Rejected", components: [{ type: "Missing" }] }).success).toBe(false);
+    expect(tools.execute("get_current_page", {}).observation).toMatchObject({ title: "New title", components: [{ props: { amount: 50 } }] });
+    expect(tools.execute("submit_page_layout", { components: [] }).proposedSchema?.title).toBe("New title");
+  });
+  it("rejects malformed tool envelopes and keeps trace sanitation", () => {
+    const tools = createAgentTools(request);
+    for (const args of [null, {}, { changes: [], extra: true }]) {
+      expect(tools.execute("apply_page_changes", args)).toMatchObject({ success: false });
+    }
+    const result = tools.execute("apply_page_changes", { changes: [{ operation: "add_component", component: { type: "Coupon", props: { secretToken: "hidden" } } }] });
+    expect(JSON.stringify(result.trace.arguments)).not.toContain("hidden");
+  });
+});
+
+it("rejects explicit null layout props instead of silently replacing them with defaults", () => {
+  const result = createAgentTools(request).execute("submit_page_layout", { components: [{ type: "Coupon", props: null }] });
+  expect(result).toMatchObject({ success: false, observation: { errors: [expect.stringContaining("object")] } });
+});

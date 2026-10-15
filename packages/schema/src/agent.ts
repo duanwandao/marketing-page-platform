@@ -4,7 +4,8 @@ export const agentToolNames = [
   "list_components",
   "get_component_definition",
   "get_current_page",
-  "submit_page_layout"
+  "submit_page_layout",
+  "apply_page_changes"
 ] as const;
 
 export type AgentToolName = (typeof agentToolNames)[number];
