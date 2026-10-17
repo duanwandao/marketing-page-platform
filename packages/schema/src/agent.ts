@@ -28,7 +28,12 @@ export interface AgentRequest {
   instruction: string;
   currentPage: PageSchema;
   componentCatalog: AgentComponentDefinition[];
+  history?: AgentHistoryMessage[];
+  workingCopyKind?: AgentWorkingCopyKind;
 }
+
+export type AgentHistoryMessage = { role: "user" | "assistant"; content: string };
+export type AgentWorkingCopyKind = "accepted_draft" | "pending_proposal";
 
 export interface AgentTraceEvent {
   toolName: string;

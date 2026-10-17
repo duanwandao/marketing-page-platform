@@ -102,6 +102,32 @@ describe("incremental editing agent", () => {
     expect(result.trace.map((event) => event.toolName)).toEqual(["get_current_page"]);
   });
 
+  it("places trusted system prompt, prior conversation and new instruction in order", async () => {
+    const model = new ScriptedModel([{ content: "I will update the second coupon." }]);
+    await runAgent({ request: { ...request, history: [{ role: "assistant", content: "Which coupon?" }, { role: "user", content: "The second one." }] }, model });
+    expect(model.inputs[0].messages.slice(0, 4)).toEqual([
+      expect.objectContaining({ role: "system" }),
+      { role: "assistant", content: "Which coupon?" },
+      { role: "user", content: "The second one." },
+      { role: "user", content: request.instruction }
+    ]);
+  });
+
+  it("uses a clarification follow-up to select the second stable component ID", async () => {
+    const page = { ...currentPage, components: [currentPage.components[0], { id: "coupon-second", type: "Coupon", props: { title: "Second", amount: 30 } }] };
+    const model: AgentModelAdapter = {
+      async complete({ messages }) {
+        if (messages.at(-1)?.role === "user" && messages.at(-1)?.content === "The second one") {
+          expect(messages.slice(1, 3)).toEqual([{ role: "assistant", content: "Which coupon?" }, { role: "user", content: "The first or second one?" }]);
+          return { toolCalls: [call("update", "apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-second", props: { amount: 50 } }] })] };
+        }
+        return { content: "Proposal ready." };
+      }
+    };
+    const result = await runAgent({ request: { ...request, currentPage: page, instruction: "The second one", history: [{ role: "assistant", content: "Which coupon?" }, { role: "user", content: "The first or second one?" }] }, model });
+    expect(result.proposedSchema?.components[1]).toEqual({ id: "coupon-second", type: "Coupon", props: { title: "Second", amount: 50 } });
+  });
+
   it("returns no proposal on eight-iteration exhaustion even after a successful edit", async () => {
     const model = new ScriptedModel(Array.from({ length: 9 }, (_, index) => ({ toolCalls: [call(String(index), "apply_page_changes", { changes: [{ operation: "update_component", componentId: "coupon-existing", props: { amount: 50 } }] })] })));
     const result = await runAgent({ request: { ...request, currentPage }, model });

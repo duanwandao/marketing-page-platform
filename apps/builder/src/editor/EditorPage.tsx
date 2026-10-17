@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PageRenderer } from "@mpp/renderer";
 import type { PageRecord } from "../pages/page-record";
 import type { PageRepository } from "../pages/repository/page-repository";
 import { Canvas } from "./Canvas/Canvas";
@@ -19,6 +18,7 @@ type Command = "idle" | "saving" | "publishing";
 export function EditorPage({ repository }: EditorPageProps) {
   const { pageId } = useParams();
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [page, setPage] = useState<PageRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -132,30 +132,38 @@ export function EditorPage({ repository }: EditorPageProps) {
 
   return (
     <div className="editor-shell">
-      <EditorToolbar
+        <EditorToolbar
         busy={command !== "idle"}
         hasUnsavedChanges={dirty}
         mode={mode}
         onModeChange={setMode}
         onPublish={() => void publish()}
         onSave={() => void save()}
+        onToggleWorkspace={() => setMobilePanelOpen((open) => !open)}
         onTitleChange={updatePageTitle}
         pageId={pageId}
         saveLabel={saveLabel}
         status={page.status}
         title={pageSchema.title}
       />
-      {mode === "edit" ? (
-        <div className="editor-layout">
+      <main className={`editor-layout${mobilePanelOpen ? " editor-layout--workspace-open" : ""}${mode === "preview" ? " editor-layout--preview-mode" : ""}`}>
           <ComponentLibrary />
-          <Canvas />
-          <EditorSidebar />
-        </div>
-      ) : (
-        <div className="preview-surface">
-          <PageRenderer schema={pageSchema} />
-        </div>
-      )}
+          <section className="canvas-workspace" aria-label="Page editor">
+            <div className="canvas-workspace__topline">
+              <span className="canvas-workspace__eyebrow">PAGE CANVAS</span>
+              <span className="canvas-workspace__hint">Select an element to edit its properties</span>
+            </div>
+            <Canvas />
+          </section>
+          <EditorSidebar onClose={() => setMobilePanelOpen(false)} />
+          <button className="workspace-scrim" aria-label="Close editor workspace" onClick={() => setMobilePanelOpen(false)} type="button" />
+        </main>
+      <div className={`preview-surface${mode === "preview" ? " preview-surface--active" : ""}`} aria-hidden={mode !== "preview"}>
+        <div className="preview-surface__header"><span>Live page preview</span><button aria-label="Return to editor" onClick={() => setMode("edit")} type="button">Back to editor</button></div>
+        <button className="preview-assistant-toggle" onClick={() => setMobilePanelOpen((open) => !open)} type="button">AI Copilot</button>
+        <iframe title="Page preview" src={`/pages/${pageId}`} />
+        <div className={`preview-assistant${mobilePanelOpen ? " preview-assistant--open" : ""}`}><EditorSidebar onClose={() => setMobilePanelOpen(false)} /></div>
+      </div>
     </div>
   );
 }

@@ -14,23 +14,22 @@ describe("EditorSidebar", () => {
     useEditorStore.getState().loadPage({ schemaVersion: 1, id: "page-1", title: "Draft", components: [{ id: "demo-1", type: "Demo", props: { title: "Editable title" } }] });
   });
 
-  it("defaults to Properties and opens Copilot only when its tab is activated", () => {
+  it("defaults to Copilot and keeps Properties available as a workspace mode", () => {
     render(<EditorSidebar />);
-    expect(screen.getByRole("tab", { name: "Properties" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tabpanel", { name: "Properties" })).toBeVisible();
-    expect(document.getElementById("editor-copilot-panel")).not.toBeVisible();
-
-    fireEvent.click(screen.getByRole("tab", { name: "AI Copilot" }));
+    expect(screen.getByRole("tab", { name: "AI Copilot" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel", { name: "AI Copilot" })).toBeVisible();
-    expect(screen.getByLabelText("Describe the page or change you want")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Properties" }));
+    expect(screen.getByRole("tabpanel", { name: "Properties" })).toBeVisible();
   });
 
-  it("returns to PropertyPanel when a canvas component is selected", () => {
+  it("keeps Copilot open when a canvas component is selected", () => {
     render(<EditorSidebar />);
     fireEvent.click(screen.getByRole("tab", { name: "AI Copilot" }));
     act(() => useEditorStore.getState().selectComponent("demo-1"));
-    expect(screen.getByRole("tab", { name: "Properties" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "AI Copilot" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Describe the page or change you want")).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Properties" }));
     expect(screen.getByLabelText("Title")).toHaveValue("Editable title");
-    expect(document.getElementById("editor-copilot-panel")).not.toBeVisible();
   });
 });
