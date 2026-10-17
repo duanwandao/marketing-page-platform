@@ -95,6 +95,34 @@ describe("EditorPage", () => {
     });
   });
 
+  it("keeps the editor workspace available through the narrow-screen drawer control", async () => {
+    localStorage.clear();
+    const repository = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });
+    await repository.create({ title: "Workspace" });
+    renderEditor(repository);
+    await screen.findByLabelText("Page title");
+
+    const sidebar = screen.getByRole("complementary", { name: "Editor workspace" });
+    expect(sidebar).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open assistant workspace" }));
+    expect(document.querySelector(".editor-layout")).toHaveClass("editor-layout--workspace-open");
+    fireEvent.click(screen.getByRole("button", { name: "Close workspace" }));
+    expect(document.querySelector(".editor-layout")).not.toHaveClass("editor-layout--workspace-open");
+  });
+
+  it("keeps the Copilot mounted when switching between Edit and Preview", async () => {
+    localStorage.clear();
+    const repository = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });
+    await repository.create({ title: "Persistent workspace" });
+    renderEditor(repository);
+    await screen.findByLabelText("Page title");
+    const tab = screen.getByRole("tab", { name: "AI Copilot" });
+    expect(tab).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview", hidden: true }));
+    fireEvent.click(screen.getByRole("button", { name: "AI Copilot" }));
+    expect(screen.getByLabelText("Describe the page or change you want")).toBeVisible();
+  });
+
   it("keeps later edits dirty when an earlier save completes", async () => {
     localStorage.clear();
     const delegate = new LocalStoragePageRepository(localStorage, { createId: () => "page-1" });

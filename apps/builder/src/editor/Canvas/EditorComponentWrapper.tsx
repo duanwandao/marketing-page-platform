@@ -5,13 +5,17 @@ interface EditorComponentWrapperProps extends PropsWithChildren {
   componentId: string;
   isFirst: boolean;
   isLast: boolean;
+  readOnly?: boolean;
+  highlighted?: boolean;
 }
 
 export function EditorComponentWrapper({
   children,
   componentId,
   isFirst,
-  isLast
+  isLast,
+  readOnly = false,
+  highlighted = false
 }: EditorComponentWrapperProps) {
   const selectedComponentId = useEditorStore((state) => state.selectedComponentId);
   const selectComponent = useEditorStore((state) => state.selectComponent);
@@ -22,11 +26,11 @@ export function EditorComponentWrapper({
 
   return (
     <section
-      className={`editor-component${isSelected ? " editor-component--selected" : ""}`}
-      onClick={() => selectComponent(componentId)}
+      className={`editor-component${isSelected && !readOnly ? " editor-component--selected" : ""}${highlighted ? " editor-component--highlighted" : ""}${readOnly ? " editor-component--readonly" : ""}`}
+      onClick={() => { if (!readOnly) selectComponent(componentId); }}
     >
       <div className="editor-component__content">{children}</div>
-      <div className="editor-component__tools" onClick={(event) => event.stopPropagation()}>
+      {!readOnly ? <div className="editor-component__tools" onClick={(event) => event.stopPropagation()}>
         <button disabled={isFirst} onClick={() => moveComponentUp(componentId)} title="Move up" type="button">
           ↑
         </button>
@@ -41,7 +45,7 @@ export function EditorComponentWrapper({
         <button onClick={() => removeComponent(componentId)} title="Delete" type="button">
           ×
         </button>
-      </div>
+      </div> : null}
     </section>
   );
 }

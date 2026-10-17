@@ -33,7 +33,13 @@ function isComponentDefinition(value: unknown): value is AgentComponentDefinitio
 function isAgentRequest(value: unknown): value is AgentRequest {
   if (!isRecord(value) || typeof value.instruction !== "string" || !value.instruction.trim() || !isRecord(value.currentPage) || !Array.isArray(value.currentPage.components) || !Array.isArray(value.componentCatalog)) return false;
   const page = value.currentPage;
-  return page.schemaVersion === 1 && typeof page.id === "string" && typeof page.title === "string" && Array.isArray(page.components) && page.components.every((component) => isRecord(component) && typeof component.id === "string" && typeof component.type === "string" && isRecord(component.props)) && value.componentCatalog.every(isComponentDefinition);
+  const historyValid = value.history === undefined || (
+    Array.isArray(value.history) && value.history.length <= 12 &&
+    value.history.every((message) => isRecord(message) && (message.role === "user" || message.role === "assistant") && typeof message.content === "string" && message.content.length <= 1500) &&
+    value.history.reduce((total, message) => total + (isRecord(message) && typeof message.content === "string" ? message.content.length : 0), 0) <= 12000
+  );
+  const workingCopyValid = value.workingCopyKind === undefined || value.workingCopyKind === "accepted_draft" || value.workingCopyKind === "pending_proposal";
+  return page.schemaVersion === 1 && typeof page.id === "string" && typeof page.title === "string" && Array.isArray(page.components) && page.components.every((component) => isRecord(component) && typeof component.id === "string" && typeof component.type === "string" && isRecord(component.props)) && value.componentCatalog.every(isComponentDefinition) && historyValid && workingCopyValid;
 }
 
 function messageFor(category: string): string {
